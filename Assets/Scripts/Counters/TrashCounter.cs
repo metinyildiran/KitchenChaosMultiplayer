@@ -1,25 +1,39 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+using Unity.Netcode;
 
-public class TrashCounter : BaseCounter {
+public class TrashCounter : BaseCounter
+{
 
 
     public static event EventHandler OnAnyObjectTrashed;
 
-    new public static void ResetStaticData() {
+    public static new void ResetStaticData()
+    {
         OnAnyObjectTrashed = null;
     }
 
 
 
-    public override void Interact(Player player) {
-        if (player.HasKitchenObject()) {
-            player.GetKitchenObject().DestroySelf();
+    public override void Interact(Player player)
+    {
+        if (player.HasKitchenObject())
+        {
+            KitchenObject.DestroyKitchenObject(player.GetKitchenObject());
 
-            OnAnyObjectTrashed?.Invoke(this, EventArgs.Empty);
+            InteractLogicServerRpc();
         }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void InteractLogicServerRpc()
+    {
+        InteractLogicClientRpc();
+    }
+
+    [ClientRpc]
+    private void InteractLogicClientRpc()
+    {
+        OnAnyObjectTrashed?.Invoke(this, EventArgs.Empty);
     }
 
 }
